@@ -6,7 +6,12 @@ pygame.init()
 screen_dimensions = (800, 400)
 screen = pygame.display.set_mode(screen_dimensions)
 
-pygame.display.set_caption('POG')
+
+def set_window_title():
+    pygame.display.set_caption('POG')
+
+
+set_window_title()
 clock = pygame.time.Clock()
 game_active = True
 start_time = 0
@@ -25,8 +30,8 @@ player_gravity = 0
 
 
 def currentscore():
-    current_time = pygame.time.get_ticks() - start_time
-    score_text = global_font.render(f'{current_time}', False, (64, 64, 64))
+    current_time = pygame.time.get_ticks() // 1000 - start_time
+    score_text = global_font.render(f'Score: {current_time}', False, (64, 64, 64))
     score_text_rect = score_text.get_rect(midtop=(400, 40))
     screen.blit(score_text, score_text_rect)
 
@@ -45,23 +50,43 @@ def keeprectonscreen(rect, offscreenxpos, resetxpos, direction):
         if rect.left > offscreenxpos: rect.left = resetxpos
 
 
+def reset_snail_pos():
+    snail_rect.x = 600
+
+
+def player_jump():
+    global player_gravity
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player_rect.bottom == 300:
+        player_gravity = -20
+
+
+def keep_on_ground():
+    if player_rect.bottom >= 300: player_rect.bottom = 300
+
+
+def gravity():
+    global player_gravity
+    player_gravity += 1
+    player_rect[1] = player_rect[1] + player_gravity
+
+
+def restart_game():
+    global game_active, start_time
+    if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+        game_active = True
+        reset_snail_pos()
+        start_time = pygame.time.get_ticks() // 1000
+
+
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
-        # elif event.type == pygame.MOUSEMOTION:
-        #    mousepos = event.pos
-        #    if player_rect.collidepoint(mousepos):
-        #        print("AAAAA")
         if game_active:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE and player_rect.bottom == 300:
-                player_gravity = -20
+            player_jump()
         else:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                game_active = True
-                snail_rect.x = 600
-                start_time = pygame.time.get_ticks()
+            restart_game()
 
     if game_active:
 
@@ -74,9 +99,8 @@ while True:
 
         currentscore()
 
-        player_gravity += 1
-        player_rect[1] = player_rect[1] + player_gravity
-        if player_rect.bottom >= 300: player_rect.bottom = 300
+        gravity()
+        keep_on_ground()
         screen.blit(player_surf, player_rect)
 
         if snail_rect.colliderect(player_rect):
